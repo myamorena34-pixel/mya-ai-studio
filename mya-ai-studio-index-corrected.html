@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b0b0b">
+<title>Mya AI Studio</title>
+<style>
+:root{--gold:#d5b36a;--bg:#0b0b0b;--panel:#151515}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#fff;font-family:Arial,sans-serif}
+header{padding:24px 20px 18px;text-align:center;border-bottom:1px solid #302719}
+.logo{font-family:Georgia,serif;font-size:29px;letter-spacing:3px;color:var(--gold)}
+.sub{font-size:10px;letter-spacing:4px;color:#ddd;margin-top:7px}
+main{max-width:650px;margin:auto;padding:22px 16px 50px}h1{font-family:Georgia,serif;font-size:30px;font-weight:400;line-height:1.2;margin:8px 0 12px}.gold{color:var(--gold)}
+.intro{color:#bbb;line-height:1.6;font-size:14px;margin-bottom:24px}
+.section{border:1px solid #302b21;background:var(--panel);border-radius:14px;padding:17px;margin:16px 0}.label{display:block;font-size:13px;font-weight:bold;margin-bottom:12px}
+.upload{border:1px dashed #806b40;border-radius:10px;min-height:120px;display:block;text-align:center;padding:18px;cursor:pointer;color:#ddd;font-size:13px;line-height:1.6}
+.upload input{display:block;width:100%;margin-top:12px;color:#ddd}.upload b{display:block;color:var(--gold);font-size:15px;margin-bottom:6px}
+.preview{display:none;width:100%;max-height:360px;object-fit:contain;border-radius:8px;margin-top:12px;background:#080808}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.mode{border:1px solid #393329;background:#1b1b1b;color:#fff;padding:13px 5px;border-radius:9px;font-size:12px;cursor:pointer}
+.mode.active{border-color:var(--gold);background:#302719;color:var(--gold)}.mode strong{display:block;font-size:19px;margin-bottom:7px}
+textarea{width:100%;background:#0c0c0c;color:#fff;border:1px solid #393329;border-radius:9px;padding:13px;font:14px Arial;resize:vertical;min-height:85px}
+.primary{width:100%;padding:15px;border:0;border-radius:9px;background:var(--gold);color:#14100a;font-weight:bold;cursor:pointer;margin-top:14px}
+.note{font-size:12px;line-height:1.6;color:#aaa;margin-top:13px}.result{display:none;border:1px solid #393329;border-radius:10px;padding:15px;margin-top:15px;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.result img{display:block;width:100%;max-height:520px;object-fit:contain;border-radius:8px;margin-top:12px;background:#080808}.download{display:block;text-align:center;background:var(--gold);color:#14100a;font-weight:bold;padding:13px;border-radius:8px;margin-top:12px;text-decoration:none}
+footer{text-align:center;color:#777;font-size:11px;padding:24px;border-top:1px solid #29251e}
+</style>
+</head><body>
+<header><div class="logo">MYA AI STUDIO</div><div class="sub">YOUR STYLE YOUR VISION</div></header>
+<main>
+<h1>Jouw foto.<br><span class="gold">Jouw nieuwe look.</span></h1>
+<p class="intro">Ontdek jouw persoonlijke fotostudio. Kies een functie, upload je foto en bereid jouw volgende look voor.</p>
+<div class="section"><span class="label">01 — JOUW FOTO</span>
+<label class="upload" for="basePhoto"><b>+ Upload je eigen foto</b>Kies een foto op je telefoon<br>JPG, PNG of WEBP<input id="basePhoto" type="file" accept="image/jpeg,image/png,image/webp"></label>
+<img id="basePreview" class="preview" alt="Voorbeeld van jouw foto"></div>
+<div class="section"><span class="label">02 — KIES JOUW BEWERKING</span><div class="modes">
+<button class="mode" data-mode="outfit" type="button"><strong>◇</strong>Outfit wisselen</button><button class="mode" data-mode="pose" type="button"><strong>✧</strong>Nieuwe pose</button><button class="mode active" data-mode="enhance" type="button"><strong>✦</strong>Foto verbeteren</button>
+</div></div>
+<div class="section" id="referenceSection" style="display:none"><span class="label">03 — OUTFIT REFERENTIE</span>
+<label class="upload" for="refPhoto"><b>+ Upload een tweede foto</b>Kies de outfit die je wilt overnemen<input id="refPhoto" type="file" accept="image/jpeg,image/png,image/webp"></label><img id="refPreview" class="preview" alt="Voorbeeld van outfitreferentie"></div>
+<div class="section"><span class="label">04 — JOUW INSTRUCTIES</span><textarea id="instructions" placeholder="Bijvoorbeeld: behoud mijn gezicht, huidskleur, lichaamsvorm en achtergrond. Verander alleen mijn outfit."></textarea><p class="note">Behoud je natuurlijke uitstraling en verander alleen wat je vraagt.</p></div>
+<button class="primary" id="createBtn" type="button">FOTO VERBETEREN</button><div class="result" id="result" role="status"></div>
+<p class="note">Foto verbeteren past lokaal helderheid, contrast en kleur aan. Dit is geen AI-retouchering. Outfit wisselen en nieuwe poses vereisen nog een gekoppelde beeldgeneratiedienst.</p>
+</main><footer>MYA AI STUDIO · Created for your creativity</footer>
+<script>
+let selectedMode="enhance";const base=document.getElementById("basePhoto"),ref=document.getElementById("refPhoto"),basePreview=document.getElementById("basePreview"),refPreview=document.getElementById("refPreview"),result=document.getElementById("result");
+function message(t){result.style.display="block";result.textContent=t}
+function previewFile(input,preview){const file=input.files&&input.files[0];if(!file)return;if(!/^image\/(jpeg|png|webp)$/.test(file.type)){message("Gebruik een JPG-, PNG- of WEBP-afbeelding.");input.value="";return}const reader=new FileReader();reader.onload=()=>{preview.src=reader.result;preview.style.display="block"};reader.onerror=()=>message("De foto kon niet worden gelezen. Kies de foto opnieuw.");reader.readAsDataURL(file)}
+base.addEventListener("change",()=>previewFile(base,basePreview));ref.addEventListener("change",()=>previewFile(ref,refPreview));
+document.querySelectorAll(".mode").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".mode").forEach(x=>x.classList.remove("active"));b.classList.add("active");selectedMode=b.dataset.mode;document.getElementById("referenceSection").style.display=selectedMode==="outfit"?"block":"none";document.getElementById("createBtn").textContent=selectedMode==="enhance"?"FOTO VERBETEREN":selectedMode==="pose"?"POSE VOORBEREIDEN":"OUTFITBEWERKING VOORBEREIDEN";result.style.display="none"}));
+document.getElementById("createBtn").addEventListener("click",()=>{result.style.display="block";if(!base.files||!base.files[0]){message("Upload eerst je eigen foto.");return}if(selectedMode==="outfit"){message(ref.files&&ref.files[0]?"De foto's zijn geüpload. De AI-functie voor outfits moet nog worden aangesloten.":"Upload ook een tweede foto met de gewenste outfit.");return}if(selectedMode==="pose"){message("De foto is geüpload. De AI-functie voor nieuwe poses moet nog worden aangesloten.");return}
+const reader=new FileReader();reader.onerror=()=>message("De foto kon niet worden gelezen. Kies de foto opnieuw.");reader.onload=()=>{const img=new Image();img.onload=()=>{try{const canvas=document.createElement("canvas"),scale=Math.min(1,2400/Math.max(img.naturalWidth,img.naturalHeight));canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=canvas.getContext("2d");if(!ctx)throw Error("canvas");ctx.filter="brightness(1.04) contrast(1.10) saturate(1.04)";ctx.drawImage(img,0,0,canvas.width,canvas.height);ctx.filter="none";const url=canvas.toDataURL("image/jpeg",.94);result.replaceChildren();const title=document.createElement("b");title.textContent="Je verbeterde foto is klaar";result.appendChild(title);const output=document.createElement("img");output.src=url;output.alt="Verbeterde foto";result.appendChild(output);const link=document.createElement("a");link.href=url;link.download="mya-ai-studio-verbeterde-foto.jpg";link.textContent="Download je verbeterde foto";link.className="download";result.appendChild(link);const note=document.createElement("p");note.className="note";note.textContent="Basisverbetering van helderheid, contrast en kleur. Dit is geen AI-retouchering.";result.appendChild(note)}catch(e){message("Deze foto kon niet worden verwerkt. Probeer een kleinere JPG- of PNG-foto.")}};img.onerror=()=>message("De foto kon niet worden geopend. Probeer een JPG- of PNG-afbeelding.");img.src=reader.result};reader.readAsDataURL(base.files[0])});
+</script></body></html>
