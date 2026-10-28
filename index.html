@@ -42,12 +42,157 @@ footer{text-align:center;color:#777;font-size:11px;padding:24px;border-top:1px s
 <button class="primary" id="createBtn" type="button">FOTO VERBETEREN</button><div class="result" id="result" role="status"></div>
 <p class="note">Foto verbeteren past lokaal helderheid, contrast en kleur aan. Dit is geen AI-retouchering. Outfit wisselen en nieuwe poses vereisen nog een gekoppelde beeldgeneratiedienst.</p>
 </main><footer>MYA AI STUDIO · Created for your creativity</footer>
+
 <script>
-let selectedMode="enhance";const base=document.getElementById("basePhoto"),ref=document.getElementById("refPhoto"),basePreview=document.getElementById("basePreview"),refPreview=document.getElementById("refPreview"),result=document.getElementById("result");
-function message(t){result.style.display="block";result.textContent=t}
-function previewFile(input,preview){const file=input.files&&input.files[0];if(!file)return;if(!/^image\/(jpeg|png|webp)$/.test(file.type)){message("Gebruik een JPG-, PNG- of WEBP-afbeelding.");input.value="";return}const reader=new FileReader();reader.onload=()=>{preview.src=reader.result;preview.style.display="block"};reader.onerror=()=>message("De foto kon niet worden gelezen. Kies de foto opnieuw.");reader.readAsDataURL(file)}
-base.addEventListener("change",()=>previewFile(base,basePreview));ref.addEventListener("change",()=>previewFile(ref,refPreview));
-document.querySelectorAll(".mode").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".mode").forEach(x=>x.classList.remove("active"));b.classList.add("active");selectedMode=b.dataset.mode;document.getElementById("referenceSection").style.display=selectedMode==="outfit"?"block":"none";document.getElementById("createBtn").textContent=selectedMode==="enhance"?"FOTO VERBETEREN":selectedMode==="pose"?"POSE VOORBEREIDEN":"OUTFITBEWERKING VOORBEREIDEN";result.style.display="none"}));
-document.getElementById("createBtn").addEventListener("click",()=>{result.style.display="block";if(!base.files||!base.files[0]){message("Upload eerst je eigen foto.");return}if(selectedMode==="outfit"){message(ref.files&&ref.files[0]?"De foto's zijn geüpload. De AI-functie voor outfits moet nog worden aangesloten.":"Upload ook een tweede foto met de gewenste outfit.");return}if(selectedMode==="pose"){message("De foto is geüpload. De AI-functie voor nieuwe poses moet nog worden aangesloten.");return}
-const reader=new FileReader();reader.onerror=()=>message("De foto kon niet worden gelezen. Kies de foto opnieuw.");reader.onload=()=>{const img=new Image();img.onload=()=>{try{const canvas=document.createElement("canvas"),scale=Math.min(1,2400/Math.max(img.naturalWidth,img.naturalHeight));canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=canvas.getContext("2d");if(!ctx)throw Error("canvas");ctx.filter="brightness(1.04) contrast(1.10) saturate(1.04)";ctx.drawImage(img,0,0,canvas.width,canvas.height);ctx.filter="none";const url=canvas.toDataURL("image/jpeg",.94);result.replaceChildren();const title=document.createElement("b");title.textContent="Je verbeterde foto is klaar";result.appendChild(title);const output=document.createElement("img");output.src=url;output.alt="Verbeterde foto";result.appendChild(output);const link=document.createElement("a");link.href=url;link.download="mya-ai-studio-verbeterde-foto.jpg";link.textContent="Download je verbeterde foto";link.className="download";result.appendChild(link);const note=document.createElement("p");note.className="note";note.textContent="Basisverbetering van helderheid, contrast en kleur. Dit is geen AI-retouchering.";result.appendChild(note)}catch(e){message("Deze foto kon niet worden verwerkt. Probeer een kleinere JPG- of PNG-foto.")}};img.onerror=()=>message("De foto kon niet worden geopend. Probeer een JPG- of PNG-afbeelding.");img.src=reader.result};reader.readAsDataURL(base.files[0])});
-</script></body></html>
+const API = "https://dabhorcjfggverbqwqxd.supabase.co/functions/v1/edit-image";
+let selectedMode = "enhance";
+const base = document.getElementById("basePhoto");
+const ref = document.getElementById("refPhoto");
+const basePreview = document.getElementById("basePreview");
+const refPreview = document.getElementById("refPreview");
+const result = document.getElementById("result");
+const button = document.getElementById("createBtn");
+
+function message(text) {
+  result.style.display = "block";
+  result.replaceChildren();
+  result.textContent = text;
+}
+
+function previewFile(input, preview) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+    message("Kies een JPG-, PNG- of WEBP-foto.");
+    input.value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    preview.src = reader.result;
+    preview.style.display = "block";
+  };
+  reader.readAsDataURL(file);
+}
+
+function asDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Foto kon niet worden gelezen."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function showImage(url) {
+  result.replaceChildren();
+  const title = document.createElement("b");
+  title.textContent = "Je bewerkte foto is klaar";
+  result.appendChild(title);
+
+  const img = document.createElement("img");
+  img.src = url;
+  img.alt = "Bewerkte foto";
+  result.appendChild(img);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "mya-ai-studio-foto.jpg";
+  link.textContent = "Download je foto";
+  link.className = "download";
+  result.appendChild(link);
+  result.style.display = "block";
+}
+
+base.addEventListener("change", () => previewFile(base, basePreview));
+ref.addEventListener("change", () => previewFile(ref, refPreview));
+
+document.querySelectorAll(".mode").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".mode").forEach(x => x.classList.remove("active"));
+    btn.classList.add("active");
+    selectedMode = btn.dataset.mode;
+    document.getElementById("referenceSection").style.display =
+      selectedMode === "outfit" ? "block" : "none";
+    button.textContent = selectedMode === "enhance"
+      ? "FOTO VERBETEREN"
+      : selectedMode === "pose" ? "NIEUWE POSE MAKEN" : "OUTFIT WISSELEN";
+    result.style.display = "none";
+  });
+});
+
+button.addEventListener("click", async () => {
+  if (!base.files || !base.files[0]) {
+    message("Upload eerst je eigen foto.");
+    return;
+  }
+  if (selectedMode === "outfit" && (!ref.files || !ref.files[0])) {
+    message("Upload ook een tweede foto met de gewenste outfit.");
+    return;
+  }
+
+  if (selectedMode === "enhance") {
+    try {
+      const data = await asDataURL(base.files[0]);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(1, 2400 / Math.max(img.width, img.height));
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext("2d");
+        ctx.filter = "brightness(1.04) contrast(1.10) saturate(1.04)";
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        showImage(canvas.toDataURL("image/jpeg", 0.94));
+      };
+      img.onerror = () => message("Deze foto kon niet worden geopend.");
+      img.src = data;
+    } catch {
+      message("De foto kon niet worden verwerkt.");
+    }
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "BEZIG MET BEWERKEN...";
+  message("Je foto wordt verwerkt. Even geduld.");
+
+  try {
+    const images = [await asDataURL(base.files[0])];
+    if (selectedMode === "outfit") {
+      images.push(await asDataURL(ref.files[0]));
+    }
+    if (images.some(x => x.length > 11000000)) {
+      throw new Error("Je foto is te groot. Kies een kleinere foto.");
+    }
+
+    const extra = document.getElementById("instructions").value.trim();
+    const prompt = selectedMode === "outfit"
+      ? "Use the second image as the clothing reference. Change only the outfit of the woman in the first image. Preserve her identity, face, skin tone, hair, body proportions and original background. Photorealistic, natural fabric and lighting. No beauty filter or body reshaping. " + (extra || "Keep everything unchanged except the outfit.")
+      : "Create a new natural, photorealistic fashion pose of the same woman. Preserve her identity, face, skin tone, hairstyle, body proportions, outfit, shoes and original background. Keep hands and feet anatomically realistic. No beauty filter or body reshaping. " + (extra || "Use a confident feminine pose facing mostly toward the camera.");
+
+    const response = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, image_urls: images })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "De beeldbewerking is mislukt.");
+    }
+
+    const url = data.images?.[0]?.url || data.image?.url || data.output?.url;
+    if (!url) throw new Error("Geen resultaat ontvangen. Probeer opnieuw.");
+    showImage(url);
+  } catch (error) {
+    message(error.message || "Er ging iets mis. Probeer opnieuw.");
+  } finally {
+    button.disabled = false;
+    button.textContent = selectedMode === "enhance"
+      ? "FOTO VERBETEREN"
+      : selectedMode === "pose" ? "NIEUWE POSE MAKEN" : "OUTFIT WISSELEN";
+  }
+});
+</script>
+</body></html>
